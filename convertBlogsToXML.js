@@ -21,32 +21,35 @@ const fetchAllBlogs = async () => {
     await driver.get(BLOG_URL);
 
     // Wait until blog links are loaded (adjust the class name accordingly)
-    await driver.wait(until.elementsLocated(By.css('.pro-gallery a')), 10000);
+    await driver.wait(until.elementsLocated(By.css('.gallery-item-container a')), 10000);
 
     // Get all blog links
-    const blogLinks = await driver.findElements(By.css('.pro-gallery a'));
-    
-    let blogData = [];
+    const blogLinks = await driver.findElements(By.css('.gallery-item-container a'));
+    const blogCount = blogLinks.length;
 
+    let blogData = [];
+    
     // Iterate through each blog link and visit the blog page
-    for (let linkElement of blogLinks) {
-      const link = await linkElement.getAttribute('href');
+    for (let i = 0; i < blogCount; i++) {
+      // Re-fetch blog links after navigation to avoid StaleElementReferenceError
+      const currentBlogLinks = await driver.findElements(By.css('.gallery-item-container a'));
+      const link = await currentBlogLinks[i].getAttribute('href');
 
       // Visit each blog page
       await driver.get(link);
 
       // Wait for the blog content to load
-      await driver.wait(until.elementLocated(By.css('.blog-post-page-font')), 10000); // Adjust the selector
+      await driver.wait(until.elementLocated(By.css('.blog-post-page-font')), 10000);
 
-      const title = await driver.findElement(By.css('.post-title')).getText(); // Adjust the selector
-      const date = await driver.findElement(By.css('.post-metadata__date')).getText();   // Adjust the selector
-      const content = await driver.findElement(By.css('.blog-post-page-font')).getText(); // Adjust the selector
+      const title = await driver.findElement(By.css('.post-title')).getText();
+      const date = await driver.findElement(By.css('.post-metadata__date')).getText();  
+      const content = await driver.findElement(By.css('.blog-post-page-font')).getText();
 
       blogData.push({ title, link, date, content });
 
       // Go back to the blog listing page
       await driver.navigate().back();
-      await driver.wait(until.elementsLocated(By.css('.pro-gallery a')), 10000);
+      await driver.wait(until.elementsLocated(By.css('.gallery-item-container a')), 10000);
     }
 
     return blogData;
