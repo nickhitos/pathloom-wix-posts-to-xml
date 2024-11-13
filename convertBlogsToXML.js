@@ -34,7 +34,7 @@ const retry = async (fn, retries = 3, delay = 3000) => {
 
 const fetchAllBlogs = async () => {
     try {
-        let page = 7;
+        let page = 1;
 
         while (true) {
             // Retry page navigation
@@ -121,7 +121,7 @@ const blogsToXML = (blogs) => {
 
     blogs.forEach((blog) => {
         const blogElement = root.ele("blog");
-        
+
         // Add each main image source
         blogElement.ele("thumbnail").txt(blog.thumbnailSrcs.join(", ")); // Join if multiple thumbnails
         const imagesElement = blogElement.ele("images");
