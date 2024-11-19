@@ -21,36 +21,58 @@ const driver = new Builder()
 let blogData = []; // Declare blog data globally to access it in the signal handler
 
 // Retry utility function
-const retry = async (fn, retries = 4, delay = 2000) => {
+const retry = async (fn, retries = 4, delay = 1200) => {
     for (let attempt = 1; attempt <= retries; attempt++) {
         try {
             return await fn();
         } catch (error) {
             if (attempt === retries) throw error;
             console.warn(`Attempt ${attempt} failed. Retrying in ${delay * attempt}ms...`);
-            await new Promise(res => setTimeout(res, delay * attempt)); // Exponential backoff
+            await new Promise(res => setTimeout(res, delay * attempt));
         }
+    }
+};
+
+const fetchTags = async () => {
+    const tagElements = await driver.findElements(By.css(".ZjhmPV"));
+    const tags = new Set(); // Use a Set to avoid duplicates
+    for (const tagElement of tagElements) {
+        const tagText = await tagElement.getText();
+        if (tagText) tags.add(tagText.trim()); // Trim duplicate tags
+    }
+    return Array.from(tags).join(", "); // Convert tags to a comma-separated list
+};
+
+const scrollToBottomSlowly = async () => {
+    let scrollHeight = await driver.executeScript("return document.body.scrollHeight");
+    let currentScroll = 0;
+    let viewportHeight = await driver.executeScript("return window.innerHeight");
+    let increment = 100;  // Adjust to control the scroll increment (in pixels)
+    let delay = 40;      // Adjust to control the delay between each scroll (in milliseconds)
+
+    while (currentScroll < scrollHeight) {
+        await driver.executeScript(`window.scrollTo(0, ${currentScroll});`);
+        currentScroll += increment;
+
+        // Wait for the specified delay before scrolling again
+        await new Promise(resolve => setTimeout(resolve, delay));
     }
 };
 
 const fetchAllBlogs = async () => {
     try {
-        let page = 1;
+        let page = 1; // page 2 cause first blog has everything we want to scrape
 
         while (true) {
-            // Retry page navigation
             await retry(() => driver.get(`${BLOG_URL}/page/${page}`));
             console.log(`Scraping page ${page}...`);
 
             const thumbnails = await driver.findElements(By.css("img.gallery-item"));
-
             const thumbnailSrcs = [];
             for (const thumbnail of thumbnails) {
                 const src = await thumbnail.getAttribute("src");
-            
-                if (src && !src.includes('blur')) {
+                if (src && !src.includes("blur")) {
                     thumbnailSrcs.push(src);
-                    // console.log(`Thumbnail src: ${src}...`)
                 }
             }
 
@@ -62,28 +84,28 @@ const fetchAllBlogs = async () => {
                 return driver.findElements(By.css(".gallery-item-container a"));
             });
 
-            if (blogElements.length === 0) break; // End of pages
+            if (blogElements.length === 0) break;
 
-            // Extract links from the current page
             const links = [];
             for (let href of blogElements) {
                 links.push(await retry(() => href.getAttribute("href")));
             }
 
-            // Iterate through each blog link for the current page
             for (let i = 0; i < links.length; i++) {
-                const link = links[i]; // Get the current blog link
+                const link = links[i];
                 console.log(`Blog link: ${link}`);
 
-                // Visit each blog page with retry
                 await sleep(2000);
                 await retry(() => driver.get(link));
 
-                // Wait for the blog content to load with retry
-                await sleep(1500);
+                await sleep(3000);
                 await retry(async () => {
-                    await driver.executeScript("window.scrollTo(0, document.body.scrollHeight)");
+                    await scrollToBottomSlowly();
                 });
+
+                const author = await retry(() =>
+                    driver.findElement(By.css(".tQ0Q1A.user-name.dlINDG")).getText()
+                );
 
                 const title = await retry(() =>
                     driver.findElement(By.css(".post-title")).getText()
@@ -91,45 +113,43 @@ const fetchAllBlogs = async () => {
                 const date = await retry(() =>
                     driver.findElement(By.css(".post-metadata__date")).getText()
                 );
+
+                const tags = await retry(fetchTags); // Fetch tags
+
+                await driver.executeScript(`
+                    const elements = document.querySelectorAll('.MS7sOC, .nITq6z');
+                    elements.forEach(element => element.style.display = 'none');
+                `);
+
                 const content = await retry(() =>
                     driver.findElement(By.css(".blog-post-page-font")).getText()
                 );
 
 
-                // Fetch images from <wow-image> components on the blog page
                 const wowImages = await driver.findElements(By.css("wow-image img"));
                 const images = [];
                 for (const img of wowImages) {
                     const imgSrc = await img.getAttribute("src");
-                    if (imgSrc && !imgSrc.includes('logo')) {
+                    if (imgSrc && !imgSrc.includes("logo") && !imgSrc.includes("blur")) {
                         images.push(imgSrc);
                     }
                 }
 
-                // // Inject placeholders into the content for images
-                // images.forEach((_, idx) => {
-                //     content = content.replace("wow-image img", `<img src="${images[idx]}" />`);
-                // });
-
-                // Assign the corresponding thumbnail
                 const thumbnail = thumbnailSrcs[i];
 
-                blogData.push({thumbnail, title, link, date, content, images});
+                blogData.push({thumbnail, images, tags, author, title, link, date, content});
             }
 
-            // Move to the next page
             page++;
-
         }
-
     } catch (error) {
         console.error("Error fetching blogs:", error);
     } finally {
         await driver.quit();
     }
-
-    return blogData; // Return the data collected so far
+    return blogData;
 };
+
 
 // Save blog data to XML format
 const blogsToXML = (blogs) => {
@@ -139,12 +159,15 @@ const blogsToXML = (blogs) => {
         const blogElement = root.ele("blog");
 
         blogElement.ele("thumbnail").txt(blog.thumbnail);
+        const imagesElement = blogElement.ele("images");
+        blogElement.ele("tags").txt(blog.tags);
+        blogElement.ele("data").txt(blog.date);
+        blogElement.ele("author").txt(blog.author);
         blogElement.ele("title").txt(blog.title);
         blogElement.ele("link").txt(blog.link);
         blogElement.ele("date").txt(blog.date);
         blogElement.ele("content").txt(blog.content);
 
-        const imagesElement = blogElement.ele("images"); // important
         blog.images.forEach(imageSrc => {
             imagesElement.ele("image").txt(imageSrc);
         });
