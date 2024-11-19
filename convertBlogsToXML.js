@@ -6,7 +6,7 @@ const BLOG_URL = "https://www.pathloom.com/all-blogs";
 
 // Set Chrome options for headless mode
 const options = new chrome.Options();
-// options.addArguments("--headless");
+options.addArguments("--headless");
 options.addArguments("--no-sandbox");
 options.addArguments("--disable-dev-shm-usage");
 const service = new chrome.ServiceBuilder('/usr/bin/chromedriver'); // Path to ChromeDriver
