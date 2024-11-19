@@ -6,10 +6,11 @@ const BLOG_URL = "https://www.pathloom.com/all-blogs";
 
 // Set Chrome options for headless mode
 const options = new chrome.Options();
-options.addArguments("--headless");
+// options.addArguments("--headless");
 options.addArguments("--no-sandbox");
 options.addArguments("--disable-dev-shm-usage");
 const service = new chrome.ServiceBuilder('/usr/bin/chromedriver'); // Path to ChromeDriver
+const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
 const driver = new Builder()
     .forBrowser("chrome")
@@ -20,7 +21,7 @@ const driver = new Builder()
 let blogData = []; // Declare blog data globally to access it in the signal handler
 
 // Retry utility function
-const retry = async (fn, retries = 3, delay = 3000) => {
+const retry = async (fn, retries = 4, delay = 2000) => {
     for (let attempt = 1; attempt <= retries; attempt++) {
         try {
             return await fn();
@@ -46,8 +47,10 @@ const fetchAllBlogs = async () => {
             const thumbnailSrcs = [];
             for (const thumbnail of thumbnails) {
                 const src = await thumbnail.getAttribute("src");
-                if (!src.includes('blur')) {
+            
+                if (src && !src.includes('blur')) {
                     thumbnailSrcs.push(src);
+                    // console.log(`Thumbnail src: ${src}...`)
                 }
             }
 
@@ -68,16 +71,18 @@ const fetchAllBlogs = async () => {
             }
 
             // Iterate through each blog link for the current page
-            for (let link of links) {
+            for (let i = 0; i < links.length; i++) {
+                const link = links[i]; // Get the current blog link
                 console.log(`Blog link: ${link}`);
 
                 // Visit each blog page with retry
+                await sleep(2000);
                 await retry(() => driver.get(link));
 
                 // Wait for the blog content to load with retry
+                await sleep(1500);
                 await retry(async () => {
                     await driver.executeScript("window.scrollTo(0, document.body.scrollHeight)");
-                    await driver.wait(until.elementLocated(By.css(".post-title")), 10000); // Adjust wait time
                 });
 
                 const title = await retry(() =>
@@ -90,15 +95,26 @@ const fetchAllBlogs = async () => {
                     driver.findElement(By.css(".blog-post-page-font")).getText()
                 );
 
+
                 // Fetch images from <wow-image> components on the blog page
                 const wowImages = await driver.findElements(By.css("wow-image img"));
                 const images = [];
                 for (const img of wowImages) {
                     const imgSrc = await img.getAttribute("src");
-                    images.push(imgSrc);
+                    if (imgSrc && !imgSrc.includes('logo')) {
+                        images.push(imgSrc);
+                    }
                 }
 
-                blogData.push({ thumbnailSrcs, title, link, date, content, images });
+                // // Inject placeholders into the content for images
+                // images.forEach((_, idx) => {
+                //     content = content.replace("wow-image img", `<img src="${images[idx]}" />`);
+                // });
+
+                // Assign the corresponding thumbnail
+                const thumbnail = thumbnailSrcs[i];
+
+                blogData.push({thumbnail, title, link, date, content, images});
             }
 
             // Move to the next page
@@ -122,18 +138,17 @@ const blogsToXML = (blogs) => {
     blogs.forEach((blog) => {
         const blogElement = root.ele("blog");
 
-        // Add each main image source
-        blogElement.ele("thumbnail").txt(blog.thumbnailSrcs.join(", ")); // Join if multiple thumbnails
-        const imagesElement = blogElement.ele("images");
-        blog.images.forEach(imageSrc => {
-            imagesElement.ele("image").txt(imageSrc);
-        });
-    });
-
+        blogElement.ele("thumbnail").txt(blog.thumbnail);
         blogElement.ele("title").txt(blog.title);
         blogElement.ele("link").txt(blog.link);
         blogElement.ele("date").txt(blog.date);
         blogElement.ele("content").txt(blog.content);
+
+        const imagesElement = blogElement.ele("images"); // important
+        blog.images.forEach(imageSrc => {
+            imagesElement.ele("image").txt(imageSrc);
+        });
+    });
 
     return root.end({ prettyPrint: true });
 };
