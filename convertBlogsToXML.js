@@ -1,5 +1,6 @@
 const { Builder, By, until } = require("selenium-webdriver");
 const chrome = require("selenium-webdriver/chrome");
+const path = require('chromedriver').path;
 const { create } = require("xmlbuilder2");
 const fs = require("fs");
 const BLOG_URL = "https://www.pathloom.com/all-blogs";
@@ -9,7 +10,7 @@ const options = new chrome.Options();
 options.addArguments("--headless");
 options.addArguments("--no-sandbox");
 options.addArguments("--disable-dev-shm-usage");
-const service = new chrome.ServiceBuilder("/usr/bin/chromedriver"); // Path to ChromeDriver
+const service = new chrome.ServiceBuilder(path); // Path to ChromeDriver
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
 const driver = new Builder()
