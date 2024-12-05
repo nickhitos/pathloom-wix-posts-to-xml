@@ -50,7 +50,7 @@ const fetchContentInOrder = async () => {
         let elements = [];
         try {
             // Attempt to find elements using the CSS selectors
-            elements = await driver.findElements(By.css("._0-9kb.q87H1.D4VE2.BqjLQ, .Zrdis.A-ZZ4.joYDm.HjRUP, .-EZUV, .B-fpk, .cluSW, .o0STb.GF80u.joYDm.HjRUP, wow-image img, .AY0Vp, .omQtW, a"));
+            elements = await driver.findElements(By.css("._0-9kb.q87H1.D4VE2.BqjLQ, .Zrdis.A-ZZ4.joYDm.HjRUP, .-EZUV, .B-fpk, .cluSW, .o0STb.GF80u.joYDm.HjRUP, wow-image img, .AY0Vp, .omQtW"));
         } catch (error) {
             console.error("Error fetching elements:", error);
             // If an invalid selector error occurs, return an empty array to avoid breaking the flow
@@ -81,22 +81,44 @@ const fetchContentInOrder = async () => {
                 ) {
                     content.push({ type: "img", value: src });
                 }
-            } else if (tagName === "a") {
-                // Handle hyperlinks: directly replace text with the hyperlink
-                const href = await element.getAttribute("href");
-                const text = await element.getText(); // Get the visible text inside the <a> tag
-
-                if (href && text.trim()) {
-                    const hyperlinkHTML = `<a href="${href}" target="_blank" rel="noopener">${text.trim()}</a>`;
-                    content.push({ type: "a", value: hyperlinkHTML }); // Add the anchor tag
-                }
             } else {
                 // Otherwise, it's text, so extract the text content
                 const text = await element.getText();
                 if (text.trim()) {
                     // Only add regular text if it hasn't been processed as a bullet point
-                    if (!isBulletPoint && !processedText.has(text.trim())) {
-                        content.push({ type: "p", value: text.trim() });
+                    if (!isBulletPoint && !processedText.has(text.trim())) {						
+						var anchorFlag = false;
+						var pText = '';
+
+						if (await element.getTagName() === "p") {
+						// Get the <span> element inside the <p>
+						const spanElement = await element.findElement(By.xpath('./span'));
+
+						// Get the children of the <span> element
+						const spanChildren = await spanElement.findElements(By.xpath('./*'));
+
+						// Iterate through the children
+						for (let i = 0; i < spanChildren.length; i++) {
+							const childTagName = await spanChildren[i].getTagName();
+							if (childTagName === "span") {
+								pText += await spanChildren[i].getText();
+
+							}
+							if (childTagName === "a") {
+								anchorFlag = true;
+								const href = await spanChildren[i].getAttribute("href");
+								const hyperlinkHTML = `<a href="${href}" target="_blank" rel="noopener">${await spanChildren[i].getText()}</a>`;
+								pText += hyperlinkHTML;
+							}
+						}
+					}
+						if (anchorFlag) {
+							content.push({ type: "a", value: pText });
+							console.log(`${pText}`);
+						}
+						else {
+							content.push({ type: "p", value: text.trim() });
+						}
                         processedText.add(text.trim()); // Mark the text as processed
                     }
                 }
@@ -251,7 +273,7 @@ const blogsToXML = (blogs) => {
             } else if (item.type === "li") {
                 contentString += `<li>${item.value}</li>\n`; // Add bulleted text tag
             } else if (item.type === "a") {
-                contentString += `${item.value}\n`; // Directly add the hyperlink HTML
+                contentString += `<p>${item.value}</p>\n`; // Directly add the hyperlink HTML
             }
         });
 
