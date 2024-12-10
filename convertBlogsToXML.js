@@ -46,101 +46,119 @@ const fetchTags = async () => {
 };
 
 const fetchContentInOrder = async () => {
-    try {
-        let elements = [];
-        try {
-            // Attempt to find elements using the CSS selectors
-            elements = await driver.findElements(By.css("._0-9kb.q87H1.D4VE2.BqjLQ, .Zrdis.A-ZZ4.joYDm.HjRUP, .-EZUV, .B-fpk, .cluSW, .o0STb.GF80u.joYDm.HjRUP, wow-image img, .AY0Vp, .omQtW"));
-        } catch (error) {
-            console.error("Error fetching elements:", error);
-            // If an invalid selector error occurs, return an empty array to avoid breaking the flow
-            return [];
-        }
+	try {
 
-        const content = [];
-        const processedText = new Set(); // Use a Set to track processed text
+		let elements = await driver.findElements(By.css("wow-image img, ._6Aw8R.NfA7j.rIsue.QMtOy, .qAx9-.NfA7j.rIsue.QMtOy, .Is4xI.aaZkV.rIsue.QMtOy, .vsfWl, .B229E"));
 
-        for (const element of elements) {
-            const tagName = await element.getTagName();
-            const className = await element.getAttribute("class");
-            const isBulletPoint = className && (className.includes("omQtW") || className.includes("AY0Vp")); // Check if the element is a bullet-point
+		let content = [];
+		const processedLinks = new Set(); // Track links already processed
+		let processedText = new Set(); // Track text already processed
 
-            if (tagName === "img") {
-                // If it's an image, get the src and wrap it in an <image> tag
-                const src = await element.getAttribute("src");
-                if (
-                    src &&
-                    !src.includes("logo") && // Exclude unnecessary images
-                    !src.includes("blur") &&
-                    !src.includes("666292_a359a1aaa615404287862f1364f1c8b4") &&
-                    !src.includes("666292_351a569704f0459280fc52170797efa9%7E") &&
-                    !src.includes("f84b209469da4471b60850dc411d770b") &&
-                    !src.includes("81af6121f84c41a5b4391d7d37fce12a") &&
-                    !src.includes("203dcdc2ac8b48de89313f90d2a4cda1") &&
-                    !src.includes("7528824071724d12a3e6c31eee0b40d4")
-                ) {
-                    content.push({ type: "img", value: src });
-                }
-            } else {
-                // Otherwise, it's text, so extract the text content
-                const text = await element.getText();
-                if (text.trim()) {
-                    // Only add regular text if it hasn't been processed as a bullet point
-                    if (!isBulletPoint && !processedText.has(text.trim())) {						
-						var anchorFlag = false;
-						var pText = '';
+		for (const element of elements) {
+			const tagName = await element.getTagName();
+			const className = await element.getAttribute("class");
+			const isBulletPoint = className && className.includes("B229E");
 
-						if (await element.getTagName() === "p") {
-						// Get the <span> element inside the <p>
+			if (tagName === "img") {
+				const src = await element.getAttribute("src");
+				if (
+					src &&
+					!src.includes("logo") && // Exclude unnecessary images
+					!src.includes("blur") &&
+					!src.includes("666292_a359a1aaa615404287862f1364f1c8b4") &&
+					!src.includes("666292_351a569704f0459280fc52170797efa9%7E") &&
+					!src.includes("f84b209469da4471b60850dc411d770b") &&
+					!src.includes("81af6121f84c41a5b4391d7d37fce12a") &&
+					!src.includes("203dcdc2ac8b48de89313f90d2a4cda1") &&
+					!src.includes("7528824071724d12a3e6c31eee0b40d4")
+				) {
+					content.push({ type: "img", value: src });
+				}
+
+			} else {
+				const text = await element.getText();
+				let anchorElement;
+
+				// Regular text (including hyperlinks in <p>)
+				// !processedText.has(anchorElement.trim()) &&
+				if (text.trim() && !processedText.has(text.trim()) && !className.includes("B229E")) {
+					let anchorFlag = false;
+					let pText = '';
+
+					if (await element.getTagName() === "p") {
 						const spanElement = await element.findElement(By.xpath('./span'));
-
-						// Get the children of the <span> element
 						const spanChildren = await spanElement.findElements(By.xpath('./*'));
-
-						// Iterate through the children
 						for (let i = 0; i < spanChildren.length; i++) {
 							const childTagName = await spanChildren[i].getTagName();
 							if (childTagName === "span") {
 								pText += await spanChildren[i].getText();
-
 							}
 							if (childTagName === "a") {
 								anchorFlag = true;
 								const href = await spanChildren[i].getAttribute("href");
-								const hyperlinkHTML = `<a href="${href}" target="_blank" rel="noopener">${await spanChildren[i].getText()}</a>`;
-								pText += hyperlinkHTML;
+
+								// Skip if the link has already been processed
+								if (!processedLinks.has(href)) {
+									const hyperlinkHTML = `<a href="${href}" target="_blank" rel="noopener">${await spanChildren[i].getText()}</a>`;
+									pText += hyperlinkHTML;
+									// console.log(JSON.stringify(content, null, 2));
+								}
 							}
 						}
 					}
-						if (anchorFlag) {
-							content.push({ type: "a", value: pText });
-							console.log(`${pText}`);
-						}
-						else {
-							content.push({ type: "p", value: text.trim() });
-						}
-                        processedText.add(text.trim()); // Mark the text as processed
-                    }
-                }
-                // Scrape text with bullet point containers (for list items)
-                if (isBulletPoint) {
-                    const bulletText = await element.getText();
-                    if (bulletText.trim() && !processedText.has(bulletText.trim())) {
-                        content.push({ type: "li", value: bulletText.trim() });
-                        processedText.add(bulletText.trim()); // Mark the bullet point as processed
-                    }
-                }
-            }
-        }
 
-        return content;
+					if (anchorFlag) {
+						content.push({ type: "a", value: pText.trim() });
+					}
+					else if (text.trim() && !processedText.has(text.trim())) {
+						content.push({ type: "p", value: text.trim() });
+					}
+					processedText.add(text.trim());
 
-    } catch (error) {
-        console.error("Error in fetchContentInOrder:", error);
-        // Return an empty array if the entire function fails
-        return [];
-    }
+				}
+
+				if (isBulletPoint && !processedText.has(text.trim()) ) {
+					let pText = '';
+					let anchorFlag = false;
+					const paragraphElement = await element.findElement(By.xpath('./p'));
+					try {
+						anchorElement = await paragraphElement.findElement(By.xpath('.//a'));
+						anchorFlag = true;
+						const href = await anchorElement.getAttribute("href");
+
+						// Skip if the link has already been processed
+						if (!processedLinks.has(href)) {
+							pText = `<li><a href="${href}" target="_blank" rel="noopener">${await anchorElement.getText()}</a></li>`;
+							processedLinks.add(href);  // Mark this link as processed
+							processedText.add(await anchorElement.getText());
+						}
+					} catch (error) {
+						// If there's no <a> tag, add plain text or other logic here
+					}
+
+					if (!anchorFlag) {
+						const bulletText = await paragraphElement.getText();
+						processedText.add(bulletText.trim());
+						pText += `${bulletText.trim()}`;
+					}
+
+					if (pText.trim()) {  // Only push if there's content
+						content.push({ type: "a", value: pText });
+					}
+				}
+			}
+		}
+		content = content.filter(item => item.value && item.value.trim() !== "");
+
+		return content;
+		
+	} catch (error) {
+		console.error("Error in fetchContentInOrder:", error);
+		return [];
+	}
 };
+
+
 
 const scrollToBottomSlowly = async () => {
 	let scrollHeight = await driver.executeScript("return document.body.scrollHeight");
@@ -160,7 +178,7 @@ const scrollToBottomSlowly = async () => {
 
 const fetchAllBlogs = async () => {
 	try {
-		let page = 2; // page 2 cause first blog has everything we want to scrape
+		let page = 4; // page 2 cause first blog has everything we want to scrape
 
 		while (true) {
 			await retry(() => driver.get(`${BLOG_URL}/page/${page}`));
@@ -219,6 +237,9 @@ const fetchAllBlogs = async () => {
 
 				const tags = await retry(fetchTags); // Fetch tags
 
+				const baseBlogPath = "https://www.pathloom.com/post/";
+				const slug = link.startsWith(baseBlogPath) ? link.replace(baseBlogPath, "") : link;
+
 				await driver.executeScript(`
                     const elements = document.querySelectorAll('.MS7sOC, .nITq6z');
                     elements.forEach(element => element.style.display = 'none');
@@ -231,6 +252,7 @@ const fetchAllBlogs = async () => {
 				blogData.push({
 					thumbnail,
 					tags,
+					slug,
 					author,
 					title,
 					link,
@@ -250,41 +272,46 @@ const fetchAllBlogs = async () => {
 };
 
 const blogsToXML = (blogs) => {
-    const root = create({ version: "1.0" }).ele("blogs");
+	const root = create({ version: "1.0" }).ele("blogs");
 
-    blogs.forEach((blog) => {
-        const blogElement = root.ele("blog");
+	blogs.forEach((blog) => {
+		const blogElement = root.ele("blog");
 
-        blogElement.ele("thumbnail").txt(blog.thumbnail);
-        blogElement.ele("tags").txt(blog.tags);
-        blogElement.ele("author").txt(blog.author);
-        blogElement.ele("title").txt(blog.title);
-        blogElement.ele("link").txt(blog.link);
-        blogElement.ele("date").txt(blog.date);
+		blogElement.ele("thumbnail").txt(blog.thumbnail);
+		blogElement.ele("link").txt(blog.link);
+		blogElement.ele("tags").txt(blog.tags);
+		blogElement.ele("slug").txt(blog.slug);
+		blogElement.ele("author").txt(blog.author);
+		blogElement.ele("title").txt(blog.title);
+		blogElement.ele("date").txt(blog.date);
 
-        // Content Handling: Embed images, text, and hyperlinks together
-        let contentString = "\n" + '<![CDATA[';  // Start the CDATA section
+		// Content Handling: Embed images, text, and hyperlinks together
+		let contentString = "\n" + '<!-- wp:group {"style":{"spacing":{"blockGap":"var:preset|spacing|40"}},"layout":{"type":"constrained"}} -->' 
+		+ "\n" + '<div class="wp-block-group"><!-- wp:group {"style":{"spacing":{"margin":{"top":"0","bottom":"0"}}},"layout":{"type":"constrained"}} -->'
+		+ "\n" + '<![CDATA[';  // Start the CDATA section
 
-        blog.content.forEach(item => {
-            if (item.type === "img") {
-                contentString += `<img src="${item.value}" />\n`;  // Add image tag
-            } else if (item.type === "p") {
-                contentString += `<p>${item.value}</p>\n`;  // Add paragraph tag
-            } else if (item.type === "li") {
-                contentString += `<li>${item.value}</li>\n`; // Add bulleted text tag
-            } else if (item.type === "a") {
-                contentString += `<p>${item.value}</p>\n`; // Directly add the hyperlink HTML
-            }
-        });
+		blog.content.forEach(item => {
+			if (item.type === "img") {
+				contentString += `<img src="${item.value}" />\n`;  // Add image tag
+			} else if (item.type === "p") {
+				contentString += `<p>${item.value}</p>\n`;  // Add paragraph tag
+			} else if (item.type === "li") {
+				contentString += `<li>${item.value}</li>\n`; // Add bulleted text tag
+			} else if (item.type === "a") {
+				contentString += `<p>${item.value}</p>\n`; // Directly add the hyperlink HTML
+			} else if (item.type === "aHyper") {
+				contentString += `<p>${item.value}</p>\n`; // Directly add the hyperlink HTML thats bulleted
+			}
+		});
 
-        contentString += ']]>';  // End the CDATA section
+		contentString += ']]> <!-- /wp:group -->';  // End the CDATA section
 
-        // Add content as raw data (CDATA section) to the blog
-        const contentElement = blogElement.ele("content");
-        contentElement.txt(contentString);  // Insert the CDATA content here
-    });
+		// Add content as raw data (CDATA section) to the blog
+		const contentElement = blogElement.ele("content");
+		contentElement.txt(contentString);  // Insert the CDATA content here
+	});
 
-    return root.end({ prettyPrint: true });
+	return root.end({ prettyPrint: true });
 };
 
 // Function to save collected data if the program is interrupted
