@@ -352,34 +352,26 @@ const blogsToXML = (blogs) => {
 
 		let contentString = "\n<![CDATA[\n"; // Start the CDATA section
 		contentString += `<!-- wp:group {"style":{"spacing":{"blockGap":"var:preset|spacing|40"}},"layout":{"type":"constrained"}} -->\n`;
-		contentString += `<div class="wp-block-group">\n`;
-
-		// Author and date group
-		contentString += `<!-- wp:group {"style":{"spacing":{"margin":{"top":"0","bottom":"0"}}},"layout":{"type":"constrained"}} -->\n`;
-		contentString += `<div class="wp-block-group" style="margin-top:0;margin-bottom:0">\n`;
-
-		contentString += `<!-- wp:group {"layout":{"type":"flex","flexWrap":"nowrap"}} -->\n`; // Row 1
-		contentString += `<div class="wp-block-group">\n`;
-
-		contentString += `<!-- wp:paragraph {"fontSize":"small"} -->\n`; // Date posted
+		contentString += `<div class="wp-block-group"><!-- wp:group {"style":{"spacing":{"margin":{"top":"0","bottom":"0"}}},"layout":{"type":"constrained"}} -->\n`;
+		contentString += `<div class="wp-block-group" style="margin-top:0;margin-bottom:0"><!-- wp:group {"layout":{"type":"flex","flexWrap":"nowrap"}} -->\n`;
+		contentString += `<div class="wp-block-group"><!-- wp:paragraph {"fontSize":"small"} -->\n`;
 		contentString += `<p class="has-small-font-size">Published: ${blog.date}</p>\n`;
 		contentString += `<!-- /wp:paragraph -->\n`;
 
-		contentString += `<!-- wp:paragraph {"fontSize":"small"} -->\n`; // Date edited
-		contentString += `<p class="has-small-font-size">Published: ${blog.date}</p>\n`;
-		contentString += `<!-- /wp:paragraph -->\n`;
-		contentString += `<!-- /wp:group -->\n`; // End Row 1
+		contentString += `<!-- wp:paragraph {"fontSize":"small"} -->\n`;
+		contentString += `<p class="has-small-font-size">Edited: ${blog.date}</p>\n`;
+		contentString += `<!-- /wp:paragraph --></div>\n`;
+		contentString += `<!-- /wp:group -->\n`;
 
-		contentString += `<!-- wp:group {"layout":{"type":"flex","flexWrap":"nowrap"}} -->\n`; // Author, editor group
+		contentString += `<!-- wp:group {"layout":{"type":"flex","flexWrap":"nowrap"}} -->\n`;
 		contentString += `<div class="wp-block-group"><!-- wp:paragraph -->\n`;
 		contentString += `<p>Writer: ${blog.author}</p>\n`;
 		contentString += `<!-- /wp:paragraph -->\n`;
+
 		contentString += `<!-- wp:paragraph -->\n`;
 		contentString += `<p>Editor: ${blog.author}</p>\n`;
 		contentString += `<!-- /wp:paragraph --></div>\n`;
 		contentString += `<!-- /wp:group --></div>\n`;
-		contentString += `<!-- /wp:group --></div>\n`;
-		contentString += `<!-- /wp:group -->\n`;
 
 		// blog.content.forEach((item) => {
 		// 	if (item.type === "img") {
@@ -404,6 +396,8 @@ const blogsToXML = (blogs) => {
 		// 		contentString += `<!-- wp:heading {"level":6} -->\n<h6 class="wp-block-heading">${item.value}</h6>\n<!-- /wp:heading -->\n`;
 		// 	}
 		// });
+		
+		contentString += `<!-- /wp:group --></div>\n`;
 		contentString += "<!-- /wp:group -->\n";
 		contentString += "]]>"; // End the CDATA section
 
