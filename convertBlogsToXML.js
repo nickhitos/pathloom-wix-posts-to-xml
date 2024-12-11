@@ -6,7 +6,7 @@ const BLOG_URL = "https://www.pathloom.com/all-blogs";
 
 // Set Chrome options for headless mode
 const options = new chrome.Options();
-// options.addArguments("--headless");
+options.addArguments("--headless");
 options.addArguments("--no-sandbox");
 options.addArguments("--disable-dev-shm-usage");
 // const service = new chrome.ServiceBuilder("/usr/bin/chromedriver"); // Path to ChromeDriver
@@ -276,7 +276,7 @@ const fetchAllBlogs = async () => {
 				links.push(await retry(() => href.getAttribute("href")));
 			}
 
-			for (let i = 0; i < links.length; i++) {
+			for (let i = 0; i < 1; i++) {
 				const link = links[i];
 				console.log(`Blog link: ${link}`);
 
@@ -328,6 +328,7 @@ const fetchAllBlogs = async () => {
 					content,
 				});
 			}
+			break;
 			page++;
 		}
 	} catch (error) {
@@ -356,16 +357,17 @@ const blogsToXML = (blogs) => {
 		// blog slug
 		blogElement.ele("slug").txt(`${blog.slug}`);
 
-		// author
-		blogElement.ele("p").txt(`\n<!-- wp:group {"layout":{"type":"flex","flexWrap":"nowrap"}} -->\n<div class="wp-block-group">\n<!-- wp:paragraph -->\n${blog.author}\n<!-- /wp:paragraph -->\n`);
 		// blog title
 		blogElement.ele("title").txt(blog.title);
+		
+		// Content Handling: Embed images, text, and hyperlinks together
+		let contentString = "\n<![CDATA["; // Start the CDATA section
+		
+		// author
+		contentString += `\n<!-- wp:group {"layout":{"type":"flex","flexWrap":"nowrap"}} -->\n<div class="wp-block-group">\n<!-- wp:paragraph -->\n<p>${blog.author}</p>\n<!-- /wp:paragraph -->\n`;
 
 		// blog date
-		blogElement.ele("date").txt(`\n<!-- wp:paragraph -->\n${blog.date}\n<!-- /wp:paragraph --></div>\n<!-- /wp:group --></div>\n<!-- /wp:group -->\n`);
-
-		// Content Handling: Embed images, text, and hyperlinks together
-		let contentString = ``; // Start the CDATA section
+		contentString += `\n<!-- wp:paragraph -->\n<p>${blog.date}</p>\n<!-- /wp:paragraph --></div>\n<!-- /wp:group --></div>\n<!-- /wp:group -->\n`;
 
 		blog.content.forEach((item) => {
 			if (item.type === "img") {
@@ -390,8 +392,7 @@ const blogsToXML = (blogs) => {
 				contentString += `<!-- wp:heading {"level":6} -->\n<h6 class="wp-block-heading">${item.value}</h6>\n<!-- /wp:heading -->\n`;
 			}
 		});
-
-		contentString += "<!-- /wp:group -->"; // End the CDATA section
+		contentString += "<!-- /wp:group -->\n]]>"; // End the CDATA section
 
 		// Add content as raw data (CDATA section) to the blog
 		const contentElement = blogElement.ele("content");
