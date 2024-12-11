@@ -344,22 +344,34 @@ const blogsToXML = (blogs) => {
 	blogs.forEach((blog) => {
 		const blogElement = root.ele("blog");
 
+		// blog thumbnail src
 		blogElement.ele("thumbnail").txt(blog.thumbnail);
+
+		// blog link
 		blogElement.ele("link").txt(blog.link);
+
+		// blog tags
 		blogElement.ele("tags").txt(blog.tags);
-		blogElement.ele("slug").txt(blog.slug);
-		blogElement.ele("author").txt(blog.author);
+
+		// blog slug
+		blogElement.ele("slug").txt(`${blog.slug}`);
+
+		// author
+		blogElement.ele("p").txt(`\n<!-- wp:group {"layout":{"type":"flex","flexWrap":"nowrap"}} -->\n<div class="wp-block-group">\n<!-- wp:paragraph -->\n${blog.author}\n<!-- /wp:paragraph -->\n`);
+		// blog title
 		blogElement.ele("title").txt(blog.title);
-		blogElement.ele("date").txt(blog.date);
+
+		// blog date
+		blogElement.ele("date").txt(`\n<!-- wp:paragraph -->\n${blog.date}\n<!-- /wp:paragraph --></div>\n<!-- /wp:group --></div>\n<!-- /wp:group -->\n`);
 
 		// Content Handling: Embed images, text, and hyperlinks together
-		let contentString = "<![CDATA["; // Start the CDATA section
+		let contentString = ``; // Start the CDATA section
 
 		blog.content.forEach((item) => {
 			if (item.type === "img") {
-				contentString += `<img src="${item.value}" />\n`; // Add image tag
+				contentString += `\n<!-- wp:image {"id":983,"sizeSlug":"large","linkDestination":"none","align":"center"} -->\n<figure class="wp-block-image aligncenter size-large">\n<img src="${item.value}"/>\n<figcaption class="wp-element-caption">Photo Credit: Jordan</figcaption>\n</figure>\n<!-- /wp:image -->\n`; // Add image tag
 			} else if (item.type === "p") {
-				contentString += `<p>${item.value}</p>\n`; // Add paragraph tag
+				contentString += `\n<!-- wp:paragraph -->\n<p>${item.value}</p>\n<!-- /wp:paragraph --></div>\n<!-- /wp:group -->\n`; // Add paragraph tag
 			} else if (item.type === "li") {
 				contentString += `<li>${item.value}</li>\n`; // Add bulleted text tag
 			} else if (item.type === "a") {
@@ -379,7 +391,7 @@ const blogsToXML = (blogs) => {
 			}
 		});
 
-		contentString += "]]> <!-- /wp:group -->"; // End the CDATA section
+		contentString += "<!-- /wp:group -->"; // End the CDATA section
 
 		// Add content as raw data (CDATA section) to the blog
 		const contentElement = blogElement.ele("content");
