@@ -9,8 +9,8 @@ const options = new chrome.Options();
 // options.addArguments("--headless");
 options.addArguments("--no-sandbox");
 options.addArguments("--disable-dev-shm-usage");
-const service = new chrome.ServiceBuilder("/usr/bin/chromedriver"); // Path to ChromeDriver
-// const service = new chrome.ServiceBuilder(require("chromedriver").path); // Path to ChromeDriver
+// const service = new chrome.ServiceBuilder("/usr/bin/chromedriver"); // Path to ChromeDriver
+const service = new chrome.ServiceBuilder(require("chromedriver").path); // Path to ChromeDriver
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
 const driver = new Builder()
@@ -276,7 +276,7 @@ const fetchAllBlogs = async () => {
 				links.push(await retry(() => href.getAttribute("href")));
 			}
 
-			for (let i = 0; i < 1; i++) {
+			for (let i = 0; i < links.length; i++) {
 				const link = links[i];
 				console.log(`Blog link: ${link}`);
 
@@ -328,7 +328,6 @@ const fetchAllBlogs = async () => {
 					content,
 				});
 			}
-			break;
 			page++;
 		}
 	} catch (error) {
