@@ -47,12 +47,32 @@ const fetchTags = async () => {
 };
 
 const fetchContentInOrder = async () => {
+	// Define individual CSS selectors as variables
+	const image = "wow-image img";
+	const headerTwo = "._6Aw8R.NfA7j.rIsue.QMtOy";
+	const headerThree = ".qAx9-.NfA7j.rIsue.QMtOy";
+	const headerFour = ".BmTdM.NfA7j.rIsue.QMtOy";
+	const headerFive = ".lWgvw.NfA7j.rIsue.QMtOy";
+	const headerSix = ".ORfsN.NfA7j.rIsue.QMtOy";
+	const paragraph = ".Is4xI.aaZkV.rIsue.QMtOy";
+	const span = ".vsfWl";
+	const listItem = ".B229E";
+
+	// Combine all selectors into a single string
+	const cssSelector = [
+		image,
+		headerTwo,
+		headerThree,
+		headerFour,
+		headerFive,
+		headerSix,
+		paragraph,
+		span,
+		listItem,
+	].join(", ");
+
 	try {
-		let elements = await driver.findElements(
-			By.css(
-				"wow-image img, ._6Aw8R.NfA7j.rIsue.QMtOy, .qAx9-.NfA7j.rIsue.QMtOy, .Is4xI.aaZkV.rIsue.QMtOy, .vsfWl, .B229E"
-			)
-		);
+		let elements = await driver.findElements(By.css(cssSelector));
 
 		let content = [];
 		const processedLinks = new Set(); // Track links already processed
@@ -80,6 +100,21 @@ const fetchContentInOrder = async () => {
 				) {
 					content.push({ type: "img", value: src });
 				}
+			} else if (tagName === "h2") {
+				let text = await element.getText();
+				content.push({ type: "h2", value: text.trim() });
+			} else if (tagName === "h3") {
+				let text = await element.getText();
+				content.push({ type: "h3", value: text.trim() });
+			} else if (tagName === "h4") {
+				let text = await element.getText();
+				content.push({ type: "h4", value: text.trim() });
+			} else if (tagName === "h5") {
+				let text = await element.getText();
+				content.push({ type: "h5", value: text.trim() });
+			} else if (tagName === "h6") {
+				let text = await element.getText();
+				content.push({ type: "h6", value: text.trim() });
 			} else {
 				const text = await element.getText();
 				let anchorElement;
@@ -203,7 +238,7 @@ const scrollToBottomSlowly = async () => {
 
 const fetchAllBlogs = async () => {
 	try {
-		let page = 4; // page 2 cause first blog has everything we want to scrape
+		let page = 1; // page 2 cause first blog has everything we want to scrape
 
 		while (true) {
 			await retry(() => driver.get(`${BLOG_URL}/page/${page}`));
@@ -241,7 +276,7 @@ const fetchAllBlogs = async () => {
 				links.push(await retry(() => href.getAttribute("href")));
 			}
 
-			for (let i = 0; i < links.length; i++) {
+			for (let i = 0; i < 1; i++) {
 				const link = links[i];
 				console.log(`Blog link: ${link}`);
 
@@ -293,7 +328,7 @@ const fetchAllBlogs = async () => {
 					content,
 				});
 			}
-
+			break;
 			page++;
 		}
 	} catch (error) {
@@ -319,13 +354,7 @@ const blogsToXML = (blogs) => {
 		blogElement.ele("date").txt(blog.date);
 
 		// Content Handling: Embed images, text, and hyperlinks together
-		let contentString =
-			"\n" +
-			'<!-- wp:group {"style":{"spacing":{"blockGap":"var:preset|spacing|40"}},"layout":{"type":"constrained"}} -->' +
-			"\n" +
-			'<div class="wp-block-group"><!-- wp:group {"style":{"spacing":{"margin":{"top":"0","bottom":"0"}}},"layout":{"type":"constrained"}} -->' +
-			"\n" +
-			"<![CDATA["; // Start the CDATA section
+		let contentString = "<![CDATA["; // Start the CDATA section
 
 		blog.content.forEach((item) => {
 			if (item.type === "img") {
@@ -338,6 +367,16 @@ const blogsToXML = (blogs) => {
 				contentString += `<p>${item.value}</p>\n`; // Directly add the hyperlink HTML
 			} else if (item.type === "aHyper") {
 				contentString += `<p>${item.value}</p>\n`; // Directly add the hyperlink HTML thats bulleted
+			} else if (item.type === "h2") {
+				contentString += `<!-- wp:heading {"level":2} -->\n<h2 class="wp-block-heading">${item.value}</h2>\n<!-- /wp:heading -->\n`;
+			} else if (item.type === "h3") {
+				contentString += `<!-- wp:heading {"level":3} -->\n<h3 class="wp-block-heading">${item.value}</h3>\n<!-- /wp:heading -->\n`;
+			} else if (item.type === "h4") {
+				contentString += `<!-- wp:heading {"level":4} -->\n<h4 class="wp-block-heading">${item.value}</h4>\n<!-- /wp:heading -->\n`;
+			} else if (item.type === "h5") {
+				contentString += `<!-- wp:heading {"level":5} -->\n<h5 class="wp-block-heading">${item.value}</h5>\n<!-- /wp:heading -->\n`;
+			} else if (item.type === "h6") {
+				contentString += `<!-- wp:heading {"level":6} -->\n<h6 class="wp-block-heading">${item.value}</h6>\n<!-- /wp:heading -->\n`;
 			}
 		});
 
