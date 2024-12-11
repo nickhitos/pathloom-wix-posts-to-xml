@@ -344,55 +344,68 @@ const blogsToXML = (blogs) => {
 
 	blogs.forEach((blog) => {
 		const blogElement = root.ele("blog");
-
-		// blog thumbnail src
 		blogElement.ele("thumbnail").txt(blog.thumbnail);
-
-		// blog link
 		blogElement.ele("link").txt(blog.link);
-
-		// blog tags
 		blogElement.ele("tags").txt(blog.tags);
-
-		// blog slug
 		blogElement.ele("slug").txt(`${blog.slug}`);
-
-		// blog title
 		blogElement.ele("title").txt(blog.title);
-		
-		// Content Handling: Embed images, text, and hyperlinks together
-		let contentString = "\n<![CDATA["; // Start the CDATA section
-		
-		// author
-		contentString += `\n<!-- wp:group {"layout":{"type":"flex","flexWrap":"nowrap"}} -->\n<div class="wp-block-group">\n<!-- wp:paragraph -->\n<p>${blog.author}</p>\n<!-- /wp:paragraph -->\n`;
 
-		// blog date
-		contentString += `\n<!-- wp:paragraph -->\n<p>${blog.date}</p>\n<!-- /wp:paragraph --></div>\n<!-- /wp:group --></div>\n<!-- /wp:group -->\n`;
+		let contentString = "\n<![CDATA[\n"; // Start the CDATA section
+		contentString += `<!-- wp:group {"style":{"spacing":{"blockGap":"var:preset|spacing|40"}},"layout":{"type":"constrained"}} -->\n`;
+		contentString += `<div class="wp-block-group">\n`;
 
-		blog.content.forEach((item) => {
-			if (item.type === "img") {
-				contentString += `\n<!-- wp:image {"id":983,"sizeSlug":"large","linkDestination":"none","align":"center"} -->\n<figure class="wp-block-image aligncenter size-large">\n<img src="${item.value}"/>\n<figcaption class="wp-element-caption">Photo Credit: Jordan</figcaption>\n</figure>\n<!-- /wp:image -->\n`; // Add image tag
-			} else if (item.type === "p") {
-				contentString += `\n<!-- wp:paragraph -->\n<p>${item.value}</p>\n<!-- /wp:paragraph --></div>\n<!-- /wp:group -->\n`; // Add paragraph tag
-			} else if (item.type === "li") {
-				contentString += `<li>${item.value}</li>\n`; // Add bulleted text tag
-			} else if (item.type === "a") {
-				contentString += `<p>${item.value}</p>\n`; // Directly add the hyperlink HTML
-			} else if (item.type === "aHyper") {
-				contentString += `<p>${item.value}</p>\n`; // Directly add the hyperlink HTML thats bulleted
-			} else if (item.type === "h2") {
-				contentString += `<!-- wp:heading {"level":2} -->\n<h2 class="wp-block-heading">${item.value}</h2>\n<!-- /wp:heading -->\n`;
-			} else if (item.type === "h3") {
-				contentString += `<!-- wp:heading {"level":3} -->\n<h3 class="wp-block-heading">${item.value}</h3>\n<!-- /wp:heading -->\n`;
-			} else if (item.type === "h4") {
-				contentString += `<!-- wp:heading {"level":4} -->\n<h4 class="wp-block-heading">${item.value}</h4>\n<!-- /wp:heading -->\n`;
-			} else if (item.type === "h5") {
-				contentString += `<!-- wp:heading {"level":5} -->\n<h5 class="wp-block-heading">${item.value}</h5>\n<!-- /wp:heading -->\n`;
-			} else if (item.type === "h6") {
-				contentString += `<!-- wp:heading {"level":6} -->\n<h6 class="wp-block-heading">${item.value}</h6>\n<!-- /wp:heading -->\n`;
-			}
-		});
-		contentString += "<!-- /wp:group -->\n]]>"; // End the CDATA section
+		// Author and date group
+		contentString += `<!-- wp:group {"style":{"spacing":{"margin":{"top":"0","bottom":"0"}}},"layout":{"type":"constrained"}} -->\n`;
+		contentString += `<div class="wp-block-group" style="margin-top:0;margin-bottom:0">\n`;
+
+		contentString += `<!-- wp:group {"layout":{"type":"flex","flexWrap":"nowrap"}} -->\n`; // Row 1
+		contentString += `<div class="wp-block-group">\n`;
+
+		contentString += `<!-- wp:paragraph {"fontSize":"small"} -->\n`; // Date posted
+		contentString += `<p class="has-small-font-size">Published: ${blog.date}</p>\n`;
+		contentString += `<!-- /wp:paragraph -->\n`;
+
+		contentString += `<!-- wp:paragraph {"fontSize":"small"} -->\n`; // Date edited
+		contentString += `<p class="has-small-font-size">Published: ${blog.date}</p>\n`;
+		contentString += `<!-- /wp:paragraph -->\n`;
+		contentString += `<!-- /wp:group -->\n`; // End Row 1
+
+		contentString += `<!-- wp:group {"layout":{"type":"flex","flexWrap":"nowrap"}} -->\n`; // Author, editor group
+		contentString += `<div class="wp-block-group"><!-- wp:paragraph -->\n`;
+		contentString += `<p>Writer: ${blog.author}</p>\n`;
+		contentString += `<!-- /wp:paragraph -->\n`;
+		contentString += `<!-- wp:paragraph -->\n`;
+		contentString += `<p>Editor: ${blog.author}</p>\n`;
+		contentString += `<!-- /wp:paragraph --></div>\n`;
+		contentString += `<!-- /wp:group --></div>\n`;
+		contentString += `<!-- /wp:group --></div>\n`;
+		contentString += `<!-- /wp:group -->\n`;
+
+		// blog.content.forEach((item) => {
+		// 	if (item.type === "img") {
+		// 		contentString += `\n<!-- wp:image {"id":983,"sizeSlug":"large","linkDestination":"none","align":"center"} -->\n<figure class="wp-block-image aligncenter size-large">\n<img src="${item.value}"/>\n<figcaption class="wp-element-caption">Photo Credit: Jordan</figcaption>\n</figure>\n<!-- /wp:image -->\n`; // Add image tag
+		// 	} else if (item.type === "p") {
+		// 		contentString += `\n<!-- wp:paragraph -->\n<p>${item.value}</p>\n<!-- /wp:paragraph --></div>\n<!-- /wp:group -->\n`; // Add paragraph tag
+		// 	} else if (item.type === "li") {
+		// 		contentString += `<li>${item.value}</li>\n`; // Add bulleted text tag
+		// 	} else if (item.type === "a") {
+		// 		contentString += `<p>${item.value}</p>\n`; // Directly add the hyperlink HTML
+		// 	} else if (item.type === "aHyper") {
+		// 		contentString += `<p>${item.value}</p>\n`; // Directly add the hyperlink HTML thats bulleted
+		// 	} else if (item.type === "h2") {
+		// 		contentString += `<!-- wp:heading {"level":2} -->\n<h2 class="wp-block-heading">${item.value}</h2>\n<!-- /wp:heading -->\n`;
+		// 	} else if (item.type === "h3") {
+		// 		contentString += `<!-- wp:heading {"level":3} -->\n<h3 class="wp-block-heading">${item.value}</h3>\n<!-- /wp:heading -->\n`;
+		// 	} else if (item.type === "h4") {
+		// 		contentString += `<!-- wp:heading {"level":4} -->\n<h4 class="wp-block-heading">${item.value}</h4>\n<!-- /wp:heading -->\n`;
+		// 	} else if (item.type === "h5") {
+		// 		contentString += `<!-- wp:heading {"level":5} -->\n<h5 class="wp-block-heading">${item.value}</h5>\n<!-- /wp:heading -->\n`;
+		// 	} else if (item.type === "h6") {
+		// 		contentString += `<!-- wp:heading {"level":6} -->\n<h6 class="wp-block-heading">${item.value}</h6>\n<!-- /wp:heading -->\n`;
+		// 	}
+		// });
+		contentString += "<!-- /wp:group -->\n";
+		contentString += "]]>"; // End the CDATA section
 
 		// Add content as raw data (CDATA section) to the blog
 		const contentElement = blogElement.ele("content");
