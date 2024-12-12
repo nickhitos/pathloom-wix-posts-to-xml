@@ -373,30 +373,33 @@ const blogsToXML = (blogs) => {
 		contentString += `<!-- /wp:paragraph --></div>\n`;
 		contentString += `<!-- /wp:group --></div>\n`;
 
-		// blog.content.forEach((item) => {
-		// 	if (item.type === "img") {
-		// 		contentString += `\n<!-- wp:image {"id":983,"sizeSlug":"large","linkDestination":"none","align":"center"} -->\n<figure class="wp-block-image aligncenter size-large">\n<img src="${item.value}"/>\n<figcaption class="wp-element-caption">Photo Credit: Jordan</figcaption>\n</figure>\n<!-- /wp:image -->\n`; // Add image tag
-		// 	} else if (item.type === "p") {
-		// 		contentString += `\n<!-- wp:paragraph -->\n<p>${item.value}</p>\n<!-- /wp:paragraph --></div>\n<!-- /wp:group -->\n`; // Add paragraph tag
-		// 	} else if (item.type === "li") {
-		// 		contentString += `<li>${item.value}</li>\n`; // Add bulleted text tag
-		// 	} else if (item.type === "a") {
-		// 		contentString += `<p>${item.value}</p>\n`; // Directly add the hyperlink HTML
-		// 	} else if (item.type === "aHyper") {
-		// 		contentString += `<p>${item.value}</p>\n`; // Directly add the hyperlink HTML thats bulleted
-		// 	} else if (item.type === "h2") {
-		// 		contentString += `<!-- wp:heading {"level":2} -->\n<h2 class="wp-block-heading">${item.value}</h2>\n<!-- /wp:heading -->\n`;
-		// 	} else if (item.type === "h3") {
-		// 		contentString += `<!-- wp:heading {"level":3} -->\n<h3 class="wp-block-heading">${item.value}</h3>\n<!-- /wp:heading -->\n`;
-		// 	} else if (item.type === "h4") {
-		// 		contentString += `<!-- wp:heading {"level":4} -->\n<h4 class="wp-block-heading">${item.value}</h4>\n<!-- /wp:heading -->\n`;
-		// 	} else if (item.type === "h5") {
-		// 		contentString += `<!-- wp:heading {"level":5} -->\n<h5 class="wp-block-heading">${item.value}</h5>\n<!-- /wp:heading -->\n`;
-		// 	} else if (item.type === "h6") {
-		// 		contentString += `<!-- wp:heading {"level":6} -->\n<h6 class="wp-block-heading">${item.value}</h6>\n<!-- /wp:heading -->\n`;
-		// 	}
-		// });
-		
+		blog.content.forEach((item) => {
+			if (item.type === "img") {
+				contentString += `<!-- wp:image {"sizeSlug":"large","linkDestination":"none","align":"center"} -->`
+				contentString += `<figure class="wp-block-image aligncenter size-large"><img src=${item.value} alt="" /><figcaption class="wp-element-caption">Photo Credit: Jordan</figcaption></figure>`
+				contentString += `<!-- /wp:image -->`
+			}
+			// else if (item.type === "p") {
+			// 	contentString += `\n<!-- wp:paragraph -->\n<p>${item.value}</p>\n<!-- /wp:paragraph --></div>\n<!-- /wp:group -->\n`; // Add paragraph tag
+			// } else if (item.type === "li") {
+			// 	contentString += `<li>${item.value}</li>\n`; // Add bulleted text tag
+			// } else if (item.type === "a") {
+			// 	contentString += `<p>${item.value}</p>\n`; // Directly add the hyperlink HTML
+			// } else if (item.type === "aHyper") {
+			// 	contentString += `<p>${item.value}</p>\n`; // Directly add the hyperlink HTML thats bulleted
+			// } else if (item.type === "h2") {
+			// 	contentString += `<!-- wp:heading {"level":2} -->\n<h2 class="wp-block-heading">${item.value}</h2>\n<!-- /wp:heading -->\n`;
+			// } else if (item.type === "h3") {
+			// 	contentString += `<!-- wp:heading {"level":3} -->\n<h3 class="wp-block-heading">${item.value}</h3>\n<!-- /wp:heading -->\n`;
+			// } else if (item.type === "h4") {
+			// 	contentString += `<!-- wp:heading {"level":4} -->\n<h4 class="wp-block-heading">${item.value}</h4>\n<!-- /wp:heading -->\n`;
+			// } else if (item.type === "h5") {
+			// 	contentString += `<!-- wp:heading {"level":5} -->\n<h5 class="wp-block-heading">${item.value}</h5>\n<!-- /wp:heading -->\n`;
+			// } else if (item.type === "h6") {
+			// 	contentString += `<!-- wp:heading {"level":6} -->\n<h6 class="wp-block-heading">${item.value}</h6>\n<!-- /wp:heading -->\n`;
+			// }
+		});
+
 		contentString += `<!-- /wp:group --></div>\n`;
 		contentString += "<!-- /wp:group -->\n";
 		contentString += "]]>"; // End the CDATA section
