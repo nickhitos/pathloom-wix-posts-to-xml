@@ -84,20 +84,18 @@ const fetchContentInOrder = async () => {
 			const isBulletPoint = className && className.includes("NdNAj");
 
 			if (tagName === "img") {
+				const imgAlt = await element.getAttribute("alt");
 				const src = await element.getAttribute("src");
 				if (
-					src &&
+					 src && !imgAlt.includes("Writer's picture") &&
 					!src.includes("logo") && // Exclude unnecessary images
 					!src.includes("blur") &&
 					!src.includes("666292_a359a1aaa615404287862f1364f1c8b4") &&
-					!src.includes(
-						"666292_351a569704f0459280fc52170797efa9%7E"
-					) &&
+					!src.includes("666292_351a569704f0459280fc52170797efa9%7E") &&
 					!src.includes("f84b209469da4471b60850dc411d770b") &&
 					!src.includes("81af6121f84c41a5b4391d7d37fce12a") &&
 					!src.includes("203dcdc2ac8b48de89313f90d2a4cda1") &&
-					!src.includes("7528824071724d12a3e6c31eee0b40d4")
-				) {
+					!src.includes("7528824071724d12a3e6c31eee0b40d4")) {
 					content.push({ type: "img", value: src });
 				}
 			} else if (tagName === "h2") {
@@ -121,39 +119,25 @@ const fetchContentInOrder = async () => {
 
 				// Regular text (including hyperlinks in <p>)
 				// !processedText.has(anchorElement.trim()) &&
-				if (
-					text.trim() &&
-					!processedText.has(text.trim()) &&
-					!className.includes("NdNAj")
-				) {
+				if (text.trim() && !processedText.has(text.trim()) && !className.includes("NdNAj")) {
 					let anchorFlag = false;
 					let pText = "";
 
 					if ((await element.getTagName()) === "p") {
-						const spanElement = await element.findElement(
-							By.xpath("./span")
-						);
-						const spanChildren = await spanElement.findElements(
-							By.xpath("./*")
-						);
+						const spanElement = await element.findElement(By.xpath("./span"));
+						const spanChildren = await spanElement.findElements(By.xpath("./*"));
 						for (let i = 0; i < spanChildren.length; i++) {
-							const childTagName = await spanChildren[
-								i
-							].getTagName();
+							const childTagName = await spanChildren[i].getTagName();
 							if (childTagName === "span") {
 								pText += await spanChildren[i].getText();
 							}
 							if (childTagName === "a") {
 								anchorFlag = true;
-								const href = await spanChildren[i].getAttribute(
-									"href"
-								);
+								const href = await spanChildren[i].getAttribute("href");
 
 								// Skip if the link has already been processed
 								if (!processedLinks.has(href)) {
-									const hyperlinkHTML = `<a href="${href}" target="_blank" rel="noopener">${await spanChildren[
-										i
-									].getText()}</a>`;
+									const hyperlinkHTML = `<a href="${href}" target="_blank" rel="noopener">${await spanChildren[i].getText()}</a>`;
 									pText += hyperlinkHTML;
 								}
 							}
