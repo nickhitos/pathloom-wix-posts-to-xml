@@ -6,11 +6,11 @@ const BLOG_URL = "https://www.pathloom.com/all-blogs";
 
 // Set Chrome options for headless mode
 const options = new chrome.Options();
-options.addArguments("--headless");
+// options.addArguments("--headless");
 options.addArguments("--no-sandbox");
 options.addArguments("--disable-dev-shm-usage");
-// const service = new chrome.ServiceBuilder("/usr/bin/chromedriver"); // Path to ChromeDriver
-const service = new chrome.ServiceBuilder(require("chromedriver").path); // Path to ChromeDriver
+const service = new chrome.ServiceBuilder("/usr/bin/chromedriver"); // Path to ChromeDriver
+// const service = new chrome.ServiceBuilder(require("chromedriver").path); // Path to ChromeDriver
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
 const driver = new Builder()
@@ -49,14 +49,14 @@ const fetchTags = async () => {
 const fetchContentInOrder = async () => {
 	// Define individual CSS selectors as variables
 	const image = "wow-image img";
-	const headerTwo = "._6Aw8R.NfA7j.rIsue.QMtOy";
+	const headerTwo = ".edXX-.QdIE9.sw7z0.bfpEf";
 	const headerThree = ".qAx9-.NfA7j.rIsue.QMtOy";
 	const headerFour = ".BmTdM.NfA7j.rIsue.QMtOy";
 	const headerFive = ".lWgvw.NfA7j.rIsue.QMtOy";
 	const headerSix = ".ORfsN.NfA7j.rIsue.QMtOy";
-	const paragraph = ".Is4xI.aaZkV.rIsue.QMtOy";
-	const span = ".vsfWl";
-	const listItem = ".B229E";
+	const paragraph = ".-XFiF.FMjBj.sw7z0.bfpEf";
+	const span = ".TCUah";
+	const listItem = ".NdNAj";
 
 	// Combine all selectors into a single string
 	const cssSelector = [
@@ -81,23 +81,20 @@ const fetchContentInOrder = async () => {
 		for (const element of elements) {
 			const tagName = await element.getTagName();
 			const className = await element.getAttribute("class");
-			const isBulletPoint = className && className.includes("B229E");
+			const isBulletPoint = className && className.includes("NdNAj");
 
 			if (tagName === "img") {
 				const src = await element.getAttribute("src");
 				if (
-					src &&
+					 src &&
 					!src.includes("logo") && // Exclude unnecessary images
 					!src.includes("blur") &&
 					!src.includes("666292_a359a1aaa615404287862f1364f1c8b4") &&
-					!src.includes(
-						"666292_351a569704f0459280fc52170797efa9%7E"
-					) &&
+					!src.includes("666292_351a569704f0459280fc52170797efa9%7E") &&
 					!src.includes("f84b209469da4471b60850dc411d770b") &&
 					!src.includes("81af6121f84c41a5b4391d7d37fce12a") &&
 					!src.includes("203dcdc2ac8b48de89313f90d2a4cda1") &&
-					!src.includes("7528824071724d12a3e6c31eee0b40d4")
-				) {
+					!src.includes("7528824071724d12a3e6c31eee0b40d4")) {
 					content.push({ type: "img", value: src });
 				}
 			} else if (tagName === "h2") {
@@ -121,41 +118,26 @@ const fetchContentInOrder = async () => {
 
 				// Regular text (including hyperlinks in <p>)
 				// !processedText.has(anchorElement.trim()) &&
-				if (
-					text.trim() &&
-					!processedText.has(text.trim()) &&
-					!className.includes("B229E")
-				) {
+				if (text.trim() && !processedText.has(text.trim()) && !className.includes("NdNAj")) {
 					let anchorFlag = false;
 					let pText = "";
 
 					if ((await element.getTagName()) === "p") {
-						const spanElement = await element.findElement(
-							By.xpath("./span")
-						);
-						const spanChildren = await spanElement.findElements(
-							By.xpath("./*")
-						);
+						const spanElement = await element.findElement(By.xpath("./span"));
+						const spanChildren = await spanElement.findElements(By.xpath("./*"));
 						for (let i = 0; i < spanChildren.length; i++) {
-							const childTagName = await spanChildren[
-								i
-							].getTagName();
+							const childTagName = await spanChildren[i].getTagName();
 							if (childTagName === "span") {
 								pText += await spanChildren[i].getText();
 							}
 							if (childTagName === "a") {
 								anchorFlag = true;
-								const href = await spanChildren[i].getAttribute(
-									"href"
-								);
+								const href = await spanChildren[i].getAttribute("href");
 
 								// Skip if the link has already been processed
 								if (!processedLinks.has(href)) {
-									const hyperlinkHTML = `<a href="${href}" target="_blank" rel="noopener">${await spanChildren[
-										i
-									].getText()}</a>`;
+									const hyperlinkHTML = `<a href="${href}" target="_blank" rel="noopener">${await spanChildren[i].getText()}</a>`;
 									pText += hyperlinkHTML;
-									// console.log(JSON.stringify(content, null, 2));
 								}
 							}
 						}
@@ -205,9 +187,7 @@ const fetchContentInOrder = async () => {
 				}
 			}
 		}
-		content = content.filter(
-			(item) => item.value && item.value.trim() !== ""
-		);
+		// content = content.filter((item) => item.value && item.value.trim() !== "");
 
 		return content;
 	} catch (error) {
@@ -375,16 +355,26 @@ const blogsToXML = (blogs) => {
 
 		blog.content.forEach((item) => {
 			if (item.type === "img") {
-				contentString += `<!-- wp:image {"sizeSlug":"large","linkDestination":"none","align":"center"} -->`
-				contentString += `<figure class="wp-block-image aligncenter size-large"><img src=${item.value} alt="" /><figcaption class="wp-element-caption">Photo Credit: Jordan</figcaption></figure>`
-				contentString += `<!-- /wp:image -->`
+				contentString += `<!-- wp:image {"sizeSlug":"large","linkDestination":"none","align":"center"} -->\n`
+				contentString += `<figure class="wp-block-image aligncenter size-large"><img src=${item.value} alt="" /><figcaption class="wp-element-caption">Photo Credit: Jordan</figcaption></figure>\n`
+				contentString += `<!-- /wp:image -->\n`
+			} else if (item.type === "p") {
+				contentString += `\n`;
+				contentString += `<!-- wp:paragraph -->\n`; // Add paragraph tag
+				contentString += `<p>${item.value}</p>\n`;
+				contentString += `<!-- /wp:paragraph --></div>\n`;
+				contentString += `</div>\n`;
+				contentString += `<!-- /wp:group -->\n`;
+			} else if (item.type === "a") {
+				contentString += `\n`;
+				contentString += `<!-- wp:paragraph -->\n`; // Add paragraph tag
+				contentString += `<p>${item.value}</p>\n`; // Directly add the hyperlink HTML
+				contentString += `<!-- /wp:paragraph --></div>\n`;
+				contentString += `</div>\n`;
+				contentString += `<!-- /wp:group -->\n`;
 			}
-			// else if (item.type === "p") {
-			// 	contentString += `\n<!-- wp:paragraph -->\n<p>${item.value}</p>\n<!-- /wp:paragraph --></div>\n<!-- /wp:group -->\n`; // Add paragraph tag
 			// } else if (item.type === "li") {
 			// 	contentString += `<li>${item.value}</li>\n`; // Add bulleted text tag
-			// } else if (item.type === "a") {
-			// 	contentString += `<p>${item.value}</p>\n`; // Directly add the hyperlink HTML
 			// } else if (item.type === "aHyper") {
 			// 	contentString += `<p>${item.value}</p>\n`; // Directly add the hyperlink HTML thats bulleted
 			// } else if (item.type === "h2") {
