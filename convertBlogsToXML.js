@@ -9,8 +9,8 @@ const options = new chrome.Options();
 options.addArguments("--headless");
 options.addArguments("--no-sandbox");
 options.addArguments("--disable-dev-shm-usage");
-// const service = new chrome.ServiceBuilder("/usr/bin/chromedriver"); // Path to ChromeDriver
-const service = new chrome.ServiceBuilder(require("chromedriver").path); // Path to ChromeDriver
+const service = new chrome.ServiceBuilder("/usr/bin/chromedriver"); // Path to ChromeDriver
+// const service = new chrome.ServiceBuilder(require("chromedriver").path); // Path to ChromeDriver
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
 const driver = new Builder()
@@ -55,7 +55,6 @@ const fetchContentInOrder = async () => {
 	const headerFive = ".lWgvw.NfA7j.rIsue.QMtOy";
 	const headerSix = ".ORfsN.NfA7j.rIsue.QMtOy";
 	const paragraph = ".-XFiF.FMjBj.sw7z0.bfpEf";
-	const span = ".TCUah";
 	const listItem = ".NdNAj";
 
 	// Combine all selectors into a single string
@@ -67,7 +66,6 @@ const fetchContentInOrder = async () => {
 		headerFive,
 		headerSix,
 		paragraph,
-		span,
 		listItem,
 	].join(", ");
 
@@ -117,9 +115,42 @@ const fetchContentInOrder = async () => {
 				const text = await element.getText();
 				let anchorElement;
 
+				if (isBulletPoint && !processedText.has(text.trim())) {
+
+					let pText = "";
+					let anchorFlag = false;
+					const paragraphElement = await element.findElement(By.xpath("./p"));
+					try {
+						anchorElement = await paragraphElement.findElement(By.xpath(".//a"));
+						anchorFlag = true;
+						const href = await anchorElement.getAttribute("href");
+
+						// Skip if the link has already been processed
+						if (!processedLinks.has(href)) {
+							pText = `<li><a href="${href}" target="_blank" rel="noopener">${await anchorElement.getText()}</a></li>`;
+							processedLinks.add(href); // Mark this link as processed
+							processedText.add(await anchorElement.getText());
+						}
+					} catch (error) {
+						// If there's no <a> tag, add plain text or other logic here
+					}
+
+					if (!anchorFlag) {
+						let bulletText = await paragraphElement.getText();
+						pText += `${bulletText.trim()}`;
+						content.push({ type: "li", value: pText });
+					}
+
+					if (pText.trim()) {
+						// Only push if there's content
+						content.push({ type: "a", value: pText });
+					}
+				}
+
+
 				// Regular text (including hyperlinks in <p>)
 				// !processedText.has(anchorElement.trim()) &&
-				if (text.trim() && !processedText.has(text.trim()) && !className.includes("NdNAj")) {
+				if (text.trim() && !processedText.has(text.trim()) && !isBulletPoint) {
 					let anchorFlag = false;
 					let pText = "";
 
@@ -146,51 +177,23 @@ const fetchContentInOrder = async () => {
 
 					if (anchorFlag) {
 						content.push({ type: "a", value: pText.trim() });
+
 					} else if (text.trim() && !processedText.has(text.trim())) {
 						content.push({ type: "p", value: text.trim() });
-					}
-					processedText.add(text.trim());
-				}
 
-				if (isBulletPoint && !processedText.has(text.trim())) {
-					let pText = "";
-					let anchorFlag = false;
-					const paragraphElement = await element.findElement(
-						By.xpath("./p")
-					);
-					try {
-						anchorElement = await paragraphElement.findElement(
-							By.xpath(".//a")
-						);
-						anchorFlag = true;
-						const href = await anchorElement.getAttribute("href");
-
-						// Skip if the link has already been processed
-						if (!processedLinks.has(href)) {
-							pText = `<li><a href="${href}" target="_blank" rel="noopener">${await anchorElement.getText()}</a></li>`;
-							processedLinks.add(href); // Mark this link as processed
-							processedText.add(await anchorElement.getText());
-						}
-					} catch (error) {
-						// If there's no <a> tag, add plain text or other logic here
-					}
-
-					if (!anchorFlag) {
-						const bulletText = await paragraphElement.getText();
-						processedText.add(bulletText.trim());
-						pText += `${bulletText.trim()}`;
-					}
-
-					if (pText.trim()) {
-						// Only push if there's content
-						content.push({ type: "a", value: pText });
 					}
 				}
 			}
 		}
 		// content = content.filter((item) => item.value && item.value.trim() !== "");
-
+		content = content.filter((item, index, self) =>
+			index === self.findIndex((t) =>
+				t.value === item.value && (t.type === "li" || t === item)
+			)
+		);
+		
 		return content;
+
 	} catch (error) {
 		console.error("Error in fetchContentInOrder:", error);
 		return [];
@@ -364,14 +367,13 @@ const blogsToXML = (blogs) => {
 				contentString += `<!-- wp:paragraph -->\n`; // Add paragraph tag
 				contentString += `<p>${item.value}</p>\n`;
 				contentString += `<!-- /wp:paragraph -->\n`;
+			} else if (item.type === "a") {
+				contentString += `<!-- wp:paragraph -->\n`; // Add paragraph tag
+				contentString += `<p>${item.value}</p>\n`; // Directly add the hyperlink HTML
+				contentString += `<!-- /wp:paragraph -->\n`;
+			} else if (item.type === "li") {
+				contentString += `<li>${item.value}</li>\n`; // Add bulleted text tag
 			}
-			// else if (item.type === "a") {
-			// 	contentString += `<!-- wp:paragraph -->\n`; // Add paragraph tag
-			// 	contentString += `<p>${item.value}</p>\n`; // Directly add the hyperlink HTML
-			// 	contentString += `<!-- /wp:paragraph -->\n`;
-			// }
-			// } else if (item.type === "li") {
-			// 	contentString += `<li>${item.value}</li>\n`; // Add bulleted text tag
 			// } else if (item.type === "aHyper") {
 			// 	contentString += `<p>${item.value}</p>\n`; // Directly add the hyperlink HTML thats bulleted
 			// } else if (item.type === "h2") {
