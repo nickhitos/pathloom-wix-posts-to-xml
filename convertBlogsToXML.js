@@ -9,8 +9,8 @@ const options = new chrome.Options();
 options.addArguments("--headless");
 options.addArguments("--no-sandbox");
 options.addArguments("--disable-dev-shm-usage");
-const service = new chrome.ServiceBuilder("/usr/bin/chromedriver"); // Path to ChromeDriver
-// const service = new chrome.ServiceBuilder(require("chromedriver").path); // Path to ChromeDriver
+// const service = new chrome.ServiceBuilder("/usr/bin/chromedriver"); // Path to ChromeDriver
+const service = new chrome.ServiceBuilder(require("chromedriver").path); // Path to ChromeDriver
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
 const driver = new Builder()
@@ -80,7 +80,7 @@ const fetchContentInOrder = async () => {
 		for (const element of elements) {
 			const tagName = await element.getTagName();
 			const className = await element.getAttribute("class");
-			const isBulletPoint = className && className.includes("NdNAj") && className.includes("B229E");
+			const isBulletPoint = className && (className.includes("NdNAj") || className.includes("B229E"));
 
 			if (tagName === "img") {
 				const imgAlt = await element.getAttribute("alt");
@@ -375,18 +375,17 @@ const blogsToXML = (blogs) => {
 				contentString += `<li>${item.value}</li>\n`; // Add bulleted text tag
 			} else if (item.type === "aHyper") {
 				contentString += `<p>${item.value}</p>\n`; // Directly add the hyperlink HTML thats bulleted
+			} else if (item.type === "h2") {
+				contentString += `<!-- wp:heading {"level":2} -->\n<h2 class="wp-block-heading">${item.value}</h2>\n<!-- /wp:heading -->\n`;
+			} else if (item.type === "h3") {
+				contentString += `<!-- wp:heading {"level":3} -->\n<h3 class="wp-block-heading">${item.value}</h3>\n<!-- /wp:heading -->\n`;
+			} else if (item.type === "h4") {
+				contentString += `<!-- wp:heading {"level":4} -->\n<h4 class="wp-block-heading">${item.value}</h4>\n<!-- /wp:heading -->\n`;
+			} else if (item.type === "h5") {
+				contentString += `<!-- wp:heading {"level":5} -->\n<h5 class="wp-block-heading">${item.value}</h5>\n<!-- /wp:heading -->\n`;
+			} else if (item.type === "h6") {
+				contentString += `<!-- wp:heading {"level":6} -->\n<h6 class="wp-block-heading">${item.value}</h6>\n<!-- /wp:heading -->\n`;
 			}
-			// } else if (item.type === "h2") {
-			// 	contentString += `<!-- wp:heading {"level":2} -->\n<h2 class="wp-block-heading">${item.value}</h2>\n<!-- /wp:heading -->\n`;
-			// } else if (item.type === "h3") {
-			// 	contentString += `<!-- wp:heading {"level":3} -->\n<h3 class="wp-block-heading">${item.value}</h3>\n<!-- /wp:heading -->\n`;
-			// } else if (item.type === "h4") {
-			// 	contentString += `<!-- wp:heading {"level":4} -->\n<h4 class="wp-block-heading">${item.value}</h4>\n<!-- /wp:heading -->\n`;
-			// } else if (item.type === "h5") {
-			// 	contentString += `<!-- wp:heading {"level":5} -->\n<h5 class="wp-block-heading">${item.value}</h5>\n<!-- /wp:heading -->\n`;
-			// } else if (item.type === "h6") {
-			// 	contentString += `<!-- wp:heading {"level":6} -->\n<h6 class="wp-block-heading">${item.value}</h6>\n<!-- /wp:heading -->\n`;
-			// }
 		});
 
 		contentString += `<!-- /wp:group --></div>\n`;
