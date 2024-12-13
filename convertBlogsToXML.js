@@ -50,12 +50,13 @@ const fetchContentInOrder = async () => {
 	// Define individual CSS selectors as variables
 	const image = "wow-image img";
 	const headerTwo = ".edXX-.QdIE9.sw7z0.bfpEf";
-	const headerThree = ".qAx9-.NfA7j.rIsue.QMtOy";
+	const headerThree = ".wthqs.QdIE9.sw7z0.bfpEf, ._6Aw8R.NfA7j.rIsue.QMtOy, .qAx9-.NfA7j.rIsue.QMtOy";
 	const headerFour = ".BmTdM.NfA7j.rIsue.QMtOy";
 	const headerFive = ".lWgvw.NfA7j.rIsue.QMtOy";
 	const headerSix = ".ORfsN.NfA7j.rIsue.QMtOy";
-	const paragraph = ".-XFiF.FMjBj.sw7z0.bfpEf";
-	const listItem = ".NdNAj";
+	const paragraph = ".-XFiF.FMjBj.sw7z0.bfpEf, .-XFiF.FMjBj.omz53.bfpEf, .Is4xI.aaZkV.rIsue.QMtOy, .Is4xI.aaZkV.HZbzS.QMtOy";
+	// const span = ".dBc0Z, .TCUah";
+	const listItem = ".NdNAj, B229E";
 
 	// Combine all selectors into a single string
 	const cssSelector = [
@@ -79,7 +80,7 @@ const fetchContentInOrder = async () => {
 		for (const element of elements) {
 			const tagName = await element.getTagName();
 			const className = await element.getAttribute("class");
-			const isBulletPoint = className && className.includes("NdNAj");
+			const isBulletPoint = className && className.includes("NdNAj") && className.includes("B229E");
 
 			if (tagName === "img") {
 				const imgAlt = await element.getAttribute("alt");
@@ -140,13 +141,12 @@ const fetchContentInOrder = async () => {
 						pText += `${bulletText.trim()}`;
 						content.push({ type: "li", value: pText });
 					}
-
+					// Bulleted text with hyperlinks
 					if (pText.trim()) {
 						// Only push if there's content
-						content.push({ type: "a", value: pText });
+						content.push({ type: "aHyper", value: pText });
 					}
 				}
-
 
 				// Regular text (including hyperlinks in <p>)
 				// !processedText.has(anchorElement.trim()) &&
@@ -222,7 +222,7 @@ const scrollToBottomSlowly = async () => {
 
 const fetchAllBlogs = async () => {
 	try {
-		let page = 1; // page 2 cause first blog has everything we want to scrape
+		let page = 4; // page 2 cause first blog has everything we want to scrape
 
 		while (true) {
 			await retry(() => driver.get(`${BLOG_URL}/page/${page}`));
@@ -373,9 +373,9 @@ const blogsToXML = (blogs) => {
 				contentString += `<!-- /wp:paragraph -->\n`;
 			} else if (item.type === "li") {
 				contentString += `<li>${item.value}</li>\n`; // Add bulleted text tag
+			} else if (item.type === "aHyper") {
+				contentString += `<p>${item.value}</p>\n`; // Directly add the hyperlink HTML thats bulleted
 			}
-			// } else if (item.type === "aHyper") {
-			// 	contentString += `<p>${item.value}</p>\n`; // Directly add the hyperlink HTML thats bulleted
 			// } else if (item.type === "h2") {
 			// 	contentString += `<!-- wp:heading {"level":2} -->\n<h2 class="wp-block-heading">${item.value}</h2>\n<!-- /wp:heading -->\n`;
 			// } else if (item.type === "h3") {
