@@ -56,7 +56,7 @@ const fetchContentInOrder = async () => {
 	const headerSix = ".ORfsN.NfA7j.rIsue.QMtOy";
 	const paragraph = ".-XFiF.FMjBj.sw7z0.bfpEf, .-XFiF.FMjBj.omz53.bfpEf, .Is4xI.aaZkV.rIsue.QMtOy, .Is4xI.aaZkV.HZbzS.QMtOy";
 	// const span = ".dBc0Z, .TCUah";
-	const listItem = ".NdNAj, B229E";
+	const listItem = ".NdNAj, .B229E";
 
 	// Combine all selectors into a single string
 	const cssSelector = [
@@ -86,7 +86,7 @@ const fetchContentInOrder = async () => {
 				const imgAlt = await element.getAttribute("alt");
 				const src = await element.getAttribute("src");
 				if (
-					 src && !imgAlt.includes("Writer's picture") &&
+					src && !imgAlt.includes("Writer's picture") &&
 					!src.includes("logo") && // Exclude unnecessary images
 					!src.includes("blur") &&
 					!src.includes("666292_a359a1aaa615404287862f1364f1c8b4") &&
@@ -114,24 +114,43 @@ const fetchContentInOrder = async () => {
 				content.push({ type: "h6", value: text.trim() });
 			} else {
 				const text = await element.getText();
-				let anchorElement;
 
-				if (isBulletPoint && !processedText.has(text.trim())) {
+				if (text.trim() && isBulletPoint && !processedText.has(text.trim())) {
 
 					let pText = "";
 					let anchorFlag = false;
 					const paragraphElement = await element.findElement(By.xpath("./p"));
-					try {
-						anchorElement = await paragraphElement.findElement(By.xpath(".//a"));
-						anchorFlag = true;
-						const href = await anchorElement.getAttribute("href");
 
-						// Skip if the link has already been processed
-						if (!processedLinks.has(href)) {
-							pText = `<li><a href="${href}" target="_blank" rel="noopener">${await anchorElement.getText()}</a></li>`;
-							processedLinks.add(href); // Mark this link as processed
-							processedText.add(await anchorElement.getText());
-						}
+					try {
+						const paragraphChildren = await paragraphElement.findElement(By.xpath("./span"));
+						const spanChildren = await paragraphChildren.findElements(By.xpath("./*"))
+
+						for (let i = 0; i < spanChildren.length; i++) {
+							const childTagName = await spanChildren[i].getTagName();
+
+							if (childTagName === "span") {
+								pText += await spanChildren[i].getText();
+								// console.log(`${pText}`);
+
+							}
+							
+							if (childTagName === "a") {
+								anchorFlag = true;
+
+								const href = await spanChildren[i].getAttribute("href");
+								console.log(`${href}`);
+
+								if (!processedLinks.has(href)) {
+								pText += `<a href="${href}" target="_blank" rel="noopener">${await spanChildren[i].getText()}</a>`;
+								// console.log(`${pText}`);
+
+								content.push({ type: "bulletedHyperlinks", value: pText });
+								processedLinks.add(href); // Mark this link as processed
+								processedText.add(spanChildren.getText());
+								processedText.add(text.trim());
+								}
+					}
+				}
 					} catch (error) {
 						// If there's no <a> tag, add plain text or other logic here
 					}
@@ -141,10 +160,9 @@ const fetchContentInOrder = async () => {
 						pText += `${bulletText.trim()}`;
 						content.push({ type: "li", value: pText });
 					}
-					// Bulleted text with hyperlinks
-					if (pText.trim()) {
-						// Only push if there's content
-						content.push({ type: "aHyper", value: pText });
+					else if (text.trim() && !processedText.has(text.trim())) {
+						pText += text;
+						content.push({ type: "p", value: text.trim() });
 					}
 				}
 
@@ -180,18 +198,17 @@ const fetchContentInOrder = async () => {
 
 					} else if (text.trim() && !processedText.has(text.trim())) {
 						content.push({ type: "p", value: text.trim() });
-
 					}
 				}
 			}
 		}
-		// content = content.filter((item) => item.value && item.value.trim() !== "");
+
 		content = content.filter((item, index, self) =>
 			index === self.findIndex((t) =>
 				t.value === item.value && (t.type === "li" || t === item)
 			)
 		);
-		
+
 		return content;
 
 	} catch (error) {
