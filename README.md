@@ -1,7 +1,8 @@
 # pathloom-wix-posts-to-xml
 
 ## Overview
-This project is a web scraper designed for extracting blog data from [Pathloom's All Blogs page](https://www.pathloom.com/all-blogs). The scraper collects various pieces of information from each blog across all pages of the site.
+This project is a web scraper designed for extracting blog data from [Pathloom's All Blogs page](https://www.pathloom.com/all-blogs). The scraper collects various pieces 
+of information from each blog across all pages of the site that contain blogs.
 
 ## Features
 The scraper extracts the following blog details:
