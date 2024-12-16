@@ -1,8 +1,7 @@
 # pathloom-wix-posts-to-xml
 
 ## Overview
-This project is a web scraper designed for extracting blog data from [Pathloom's All Blogs page](https://www.pathloom.com/all-blogs). The scraper collects various pieces 
-of information from each blog across all pages of the site that contain blogs.
+This project is a web scraper designed for extracting blog data from [Pathloom's All Blogs page](https://www.pathloom.com/all-blogs). The scraper collects various pieces of information from each blog across all pages of the site.
 
 ## Features
 The scraper extracts the following blog details:
@@ -16,12 +15,19 @@ The scraper extracts the following blog details:
   - Hyperlinks
   - Plain-text
 
+### Additional Features
+- Ability to select embedded YouTube videos, extract the link, and create the equivalent WordPress (WP) embedded video block in the XML output file.
+
 ### Known Limitations
 - **Does Not Scrape:**
   - Text with special formatting (e.g., bold, italicized, colored, underlined).
 - **Bullet Points:**
-  - Bullet-pointed text can be scraped.
+  - Bullet-pointed text is scraped.
   - Hyperlinks nested inside bullet points are **not** scraped.
+- **XML Character Conversion:**
+  - Currently, `<` and `>` characters in the XML output are represented as `&lt;` and `&gt;`. These characters are manually swapped after generation. Note: If the XML file is uploaded to the importer plugin, it will automatically handle this conversion.
+- **WordPress Spacing:**
+  - Spacing of elements in WordPress may need to be adjusted manually after importing blog content.
 
 ## Setup Instructions
 To use the scraper, ensure the necessary dependencies are installed:
@@ -41,5 +47,3 @@ To use the scraper, ensure the necessary dependencies are installed:
 - **`utils.js`**: Provides utility functions like `sleep` (for delays) and `retry` (for handling retries in case of failures).
 - **`xmlGenerator.js`**: Converts the scraped blog data into an XML format and saves it as `blogs.xml`.
 - **`example.xml`**: Is an example file of what the output file `blogstoXML.xml` should look like after the scraping process is complete.
-
-
